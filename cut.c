@@ -28,10 +28,8 @@ int main(int argc,char **argv)
 	printf("nout=%d\n",nout);
 	printf("length=%ld\n",sizeof(out));
 
-	/* SAC 구조체 직접 활용
 	current->h->npts=nout;
 	current->h->_b=21500.0;
-	*/
 	wsac0(filew,x,out,&nerr,strlen(filew)); //SAC IO 함수
 
 	return 0;
