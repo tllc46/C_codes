@@ -1,8 +1,25 @@
+/* 방법
+(1)컴파일
+gcc -fPIC -I/usr/local/sac/aux/external -c chst.c
+gcc -shared  -o libchst.so chst.o /usr/local/sac/lib/libsac_all.a
+
+(2)
+~/.bashrc 마지막 줄에
+export SACSOLIST=libchst.so
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/libchst.so
+추가
+
+(3) sac에서 사용
+sac
+load chst
+chst arg1 arg2 arg3 ...
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "extfunc.h" //must include
+#include "extfunc.h" //필수
 
 int chst(int argc,char **argv,sac_files *call_data,int *update)
 {
