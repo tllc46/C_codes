@@ -1,5 +1,5 @@
 /*
-how to compile
+컴파일 방법
 gcc -o program cut.c $(bash sac-config -c -l sac sacio) -lm
 */
 
@@ -7,20 +7,20 @@ gcc -o program cut.c $(bash sac-config -c -l sac sacio) -lm
 #include <stdlib.h>
 #include <string.h>
 
-#include <sacio.h> //must include
-#include <sac.h> //must include
+#include <sacio.h> //필수
+#include <sac.h> //필수
 
-extern sac *current; //we can use sac struct directly, skipping 
+extern sac *current; //get, set 함수를 쓰지 않고 바로 sac 구조체 활용 가능
 int main(int argc,char **argv)
 {
-	int max=400000;
-	int npts,nerr,nout=max;
+	int max=400000; //npts보다 충분히 큰 수
+	int npts,nerr,nout=max; //nout 또한 npts보다 충분히 큰 수
 	float x[1],y[max],out[max];
 	float b,delta;
 	char filer[40]="HL.H35..HHZ.D.2021.276.000000.SAC",filew[10]="foo.sac";
-	rsac1(filer,y,&npts,&b,&delta,&max,&nerr,strlen(filer));
+	rsac1(filer,y,&npts,&b,&delta,&max,&nerr,strlen(filer)); //sac IO 함수
 
-	cut(y,npts,b,delta,21500,21600,1,out,&nout);
+	cut(y,npts,b,delta,21500,21600,1,out,&nout); //sac library 함수
 
 	printf("npts=%d\n",current->h->npts);
 	printf("b=%f\n",current->h->_b);
@@ -28,9 +28,9 @@ int main(int argc,char **argv)
 	printf("nout=%d\n",nout);
 	printf("length=%ld\n",sizeof(out));
 
-	current->h->npts=nout;
-	current->z->_b=21500.0;
-	wsac0(filew,x,out,&nerr,strlen(filew));
+	current->h->npts=nout; //sac 구조체 활용
+	current->z->_b=21500.0; //sac 구조체 활용
+	wsac0(filew,x,out,&nerr,strlen(filew)); //sac IO 함수
 
 	return 0;
 }
