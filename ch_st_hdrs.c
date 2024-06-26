@@ -1,5 +1,5 @@
 /*
-how to compile
+컴파일 방법
 gcc -o program ch_st_hdrs.c $(bash sac-config -c -l sacio) -lm
 */
 
@@ -7,7 +7,7 @@ gcc -o program ch_st_hdrs.c $(bash sac-config -c -l sacio) -lm
 #include <string.h>
 #include <stdlib.h>
 
-#include <sacio.h> //must include
+#include <sacio.h> //필수
 
 extern sac *current;
 
