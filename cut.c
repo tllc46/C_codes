@@ -1,4 +1,7 @@
-#gcc -o program cut.c $(bash sac-config -c -l sac sacio) -lm
+/*
+how to compile
+gcc -o program cut.c $(bash sac-config -c -l sac sacio) -lm
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +10,7 @@
 #include <sacio.h> //must include
 #include <sac.h> //must include
 
-extern sac *current;
+extern sac *current; //we can use sac struct directly, skipping 
 int main(int argc,char **argv)
 {
 	int max=400000;
