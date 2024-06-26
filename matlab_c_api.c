@@ -1,23 +1,22 @@
-//unfinished code!!
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "engine.h" //must include
-#include "matrix.h" //must include
+#include "engine.h" //필수
+#include "matrix.h" //필수
 
 int main(int argc,char **argv)
 {
 	int i,numfiles,error;
 	float stla=12.345;
 	float stlo=54.321;
-	Engine *ep; //matlab engine structure
-	mxArray *STLA,*STLO; //matlab array structure
+	Engine *ep; //MatLab engine 구조체
+	mxArray *STLA,*STLO; //MatLab array 구조체
 	/*
-	mwSize: same as size_t
-	mxClassID class id: mxINT32_CLASS, mxSINGLE_CLASS, mxDOUBLE_CLASS, ... etc. 
-	mxComplexity ComplexFlag: mxREAL or mxCOMPLEX
+ 	mxCreateNumericMatrix(mwSize,mwSize,mxClassID,mxComplexity)
+	mwSize: size_t 크기 만큼의 요소 개수
+ 	mxClassID: mxINT32_CLASS, mxSINGLE_CLASS, mxDOUBLE_CLASS, ... 등
+	mxComplexity ComplexFlag: mxREAL 또는 mxCOMPLEX
 	*/
 	STLA=mxCreateNumericMatrix(1,1,mxSINGLE_CLASS,mxREAL);
 	STLO=mxCreateNumericMatrix(1,1,mxSINGLE_CLASS,mxREAL);
