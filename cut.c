@@ -18,7 +18,7 @@ int main(int argc,char **argv)
 	float x[1],y[max],out[max];
 	float b,delta;
 	char filer[40]="HL.H35..HHZ.D.2021.276.000000.SAC",filew[10]="foo.sac";
-	rsac1(filer,y,&npts,&b,&delta,&max,&nerr,strlen(filer)); //sac IO 함수
+	rsac1(filer,y,&npts,&b,&delta,&max,&nerr,strlen(filer)); //SAC IO 함수
 
 	cut(y,npts,b,delta,21500,21600,1,out,&nout); //SAC library 함수
 
