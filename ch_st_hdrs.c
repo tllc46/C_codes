@@ -41,7 +41,7 @@ int main(int argc,char **argv)
 		return nerr;
 	}
 
-	/*SAC 구조체 직접 활용
+	/* SAC 구조체 직접 활용
 	current->h->_stla=12.345;
 	current->h->_stlo=54.321;
 	*/
