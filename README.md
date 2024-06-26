@@ -1,16 +1,16 @@
 # c_scripts
-ch_st_hdrs.c: sacio change station header
+ch_st_hdrs.c: SAC IO 함수 활용하여 station header 변경
 
-chst.c: load external command, change station header, modified sac/aux/external/flipxy.c
+chst.c: external command를 load하여 station header 변경, sac/aux/external/flipxy.c 수정
 
-chst_matlab.c: change header by calling matlab
+cut.c: SAC library의 cut 함수 활용
 
-cut.c: libsac cut sac file
+distaz.c: 거리, 방위각 계산, sac-102.0/src/ucf/distaz.c 수정
 
-distaz.c: distance, azimuth calculator, modified sac-102.0/src/ucf/distaz.c
+hdroutput.c: SAC header 보기 좋게 출력
 
-hdroutput.c: print headers prettily
+matlab_c_api.c: MatLab-C interface, stla, stlo 변경 
 
-vhdrupgrade.c: upgrading sac header version from 6 to 7, preserving headers
+vhdrupgrade.c: 정의된 header를 version 6->7로 upgrade
 
-vhdrupgrade_undefined.c: upgrading sac header version from 6 to 7, undefined headers
+vhdrupgrade_undefined.c: 정의되지 않은 header를 version 6->7로 upgrade
