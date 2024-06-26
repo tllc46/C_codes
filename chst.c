@@ -1,4 +1,7 @@
-/* 방법
+/* 
+sac/aux/external/flipxy.c 참고
+
+<방법>
 (1)컴파일
 gcc -fPIC -I/usr/local/sac/aux/external -c chst.c
 gcc -shared  -o libchst.so chst.o /usr/local/sac/lib/libsac_all.a
