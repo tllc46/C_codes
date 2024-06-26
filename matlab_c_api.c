@@ -1,5 +1,4 @@
-/*
-컴파일 방법
+/* 컴파일 방법
 (1)
 mex -R2018a -client engine matlab_c_api.c
 
