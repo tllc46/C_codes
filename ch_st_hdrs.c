@@ -1,3 +1,5 @@
+#gcc -o program ch_st_hdrs.c $(bash sac-config -c -l sacio) -lm
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
