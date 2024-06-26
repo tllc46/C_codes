@@ -10,6 +10,7 @@ gcc -o program cut.c $(bash sac-config -c -l sac sacio) -lm
 #include <sac.h> //필수
 
 extern sac *current; //get, set 함수를 쓰지 않고 바로 SAC 구조체 활용 가능
+
 int main(int argc,char **argv)
 {
 	int max=400000; //npts보다 충분히 큰 수
