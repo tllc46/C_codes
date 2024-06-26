@@ -1,4 +1,4 @@
-# C언어 코드
+# C codes
 ch_st_hdrs.c: SAC IO 함수 활용하여 station header 변경
 
 chst.c: external command를 load하여 station header 변경
