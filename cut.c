@@ -1,3 +1,5 @@
+#gcc -o program cut.c $(bash sac-config -c -l sac sacio) -lm
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
