@@ -1,3 +1,14 @@
+/*
+컴파일 방법
+(1)
+mex -R2018a -client engine matlab_c_api.c
+
+(2)
+~/.bashrc 파일 마지막 줄에
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/x86_64-linux-gnu:/usr/local/MATLAB/R2023a/bin/glnxa64:/usr/local/MATLAB/R2023a/sys/os/glnxa64
+추가
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
