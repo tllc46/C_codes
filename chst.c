@@ -16,6 +16,10 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/libchst.so
 sac
 load chst
 chst arg1 arg2 arg3 ...
+
+(4)
+"Storing data without a filename"이 뜨는데 이는 dfm/updatedfl.c의 sacput(s) 함수가 원인
+bs/iniam.c의 sacput 함수 원형을 고치면 된다
 */
 
 #include <stdio.h>
