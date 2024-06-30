@@ -15,7 +15,7 @@ int main(int argc,char **argv)
 {
 	int max=400000; //npts보다 충분히 큰 수
 	int npts,nerr,nout=max; //nout 또한 npts보다 충분히 큰 수
-	float x[1],y[max],out[max];
+	float x[1],y[400000],out[400000];
 	float b,delta;
 	char filer[40]="HL.H35..HHZ.D.2021.276.000000.SAC",filew[10]="foo.sac";
 	rsac1(filer,y,&npts,&b,&delta,&max,&nerr,strlen(filer)); //SAC IO 함수
