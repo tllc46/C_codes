@@ -14,7 +14,7 @@ int main(int argc,char **argv)
 {
 	int max=300000; //npts보다 충분히 큰 수
 	int npts,nerr;
-	float x[1],y[max],b,delta,stla,stlo;
+	float x[1],y[300000],b,delta,stla,stlo;
 	char filer[40]="HL.H35..HHZ.D.2021.276.000000.SAC",filew[8]="foo.sac";
 	rsac1(filer,y,&npts,&b,&delta,&max,&nerr,strlen(filer));
 	printf("original stla=%.15f\n",current->h->_stla);
