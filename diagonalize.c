@@ -1,5 +1,5 @@
 /*
-gcc test5.c lapack/liblapack.a lapack/librefblas.a -lgfortran -lm
+gcc diagonalize.c lapack/liblapack.a lapack/librefblas.a -lgfortran -lm
 */
 
 #include <stdio.h>
