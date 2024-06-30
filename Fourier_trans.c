@@ -1,5 +1,5 @@
 /* 컴파일 방법
-gcc test3.c -Ifftw/include -I/usr/local/sac/include -Lfftw/lib -L/usr/local/sac/lib -lfftw3f -lsacio -lm
+gcc Fourier_trans.c -I/usr/local/sac/include -Ifftw/include -L/usr/local/sac/lib -Lfftw/lib -lm -lsacio -lfftw3f
 */
 
 #include <stdio.h>
