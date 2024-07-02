@@ -1,5 +1,23 @@
-/*
+/* 컴파일 방법
 gcc diagonalize.c lapack/liblapack.a lapack/librefblas.a -lgfortran -lm
+
+(1)2차원 배열을 배열 포인터로 전달하기
+void zheev_(...,f_complex (*a)[],...);
+f_complex a[3][3]=...;
+zheev_(...,a,...);
+
+(2)2차원 배열을 포인터로 전달하기
+void zheev_(...,f_complex *a,...);
+f_complex a[3][3]=...;
+zheev_(...,*a,...); 또는 zheev_(...,(f_complex *)a,...);
+
+(3)1차원 배열을 포인터로 전달하기
+void zheev_(...,f_complex *a,...);
+f_complex a[3*3]=...;
+zheev_(...,a,...);
+
+ForTran의 함수, subroutine은 다차원 배열이라도 무조건 첫 번째 원소를 가리키는 포인터로만 받기 때문에
+배열 포인터를 전달하더라도 포인터로 인식
 */
 
 #include <stdio.h>
