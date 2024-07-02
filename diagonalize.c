@@ -33,44 +33,46 @@ void zheev_(char *jobz,char *uplo,int *n,f_complex (*a)[],int *lda,double *w,f_c
 
 int main(int argc,char **argv)
 {
-        int n=3,lda=3,lwork=-1,info,i,j;
+        int n=3,lda=3,lwork,info,i,j;
         double *w,*rwork;
         f_complex *work;
-        f_complex a[3][3]={
+        f_complex a[3][3]={ //ForTran에 전달해야 하기 때문에 열 방향 정렬
                 {{6,0},{2,-8},{9,5}},
                 {{2,8},{4,0},{7,3}},
                 {{9,-5},{7,-3},{1,0}}
         };
-        char jobz='N',uplo='U';
+        /* 실제 행렬
+        6 2+8i 9-5i
+        2-8i 4 7-3i
+        9+5i 7+3i 1
+        */
+        char jobz='V',uplo='U';
 
         w=(double *)malloc(sizeof(double)*n);
         rwork=(double *)malloc(sizeof(double)*(3*n-2));
-        work=(f_complex *)malloc(sizeof(f_complex)*5);
+        lwork=-1;
+        work=(f_complex *)malloc(sizeof(f_complex)); //최적 lwork만 담기 위해 크기 1
 
-        zheev_(&jobz,&uplo,&n,a,&lda,w,work,&lwork,rwork,&info);
-        printf("jobz=%c\n",jobz);
-        printf("uplo=%c\n",uplo);
-        printf("n=%d\n",n);
-        printf("lda=%d\n",lda);
-        printf("lwork=%d\n",lwork);
-        printf("info=%d\n",info);
+        zheev_(&jobz,&uplo,&n,a,&lda,w,work,&lwork,rwork,&info); //최적 lwork 추론
+
+        lwork=work[0].real; //최적 lwork
+        work=(f_complex *)malloc(sizeof(f_complex)*lwork); //다시 크기 lwork만큼 할당
+
+        zheev_(&jobz,&uplo,&n,a,&lda,w,work,&lwork,rwork,&info); //실제 계산
+
+        printf("info=%d\n\n",info);
+        printf("eigenvalues");
         for(i=0;i<n;i++)
         {
-                printf("w[%d]=%f\n",i,w[i]);
+                printf("w[%d]=%f\n",i,w[i]); //오름차순 고윳값
         }
-        for(i=0;i<3*n-2;i++)
-        {
-                printf("rwork[%d]=%f\n",i,rwork[i]);
-        }
-        for(i=0;i<5;i++)
-        {
-                printf("work[%d]=%f + %fi\n",i,work[i].real,work[i].imag);
-        }
+        printf("\n");
         for(i=0;i<n;i++)
         {
+                printf("eigenvector %d\n",i);
                 for(j=0;j<n;j++)
                 {
-                        printf("a[%d][%d]=%f + %fi\n",i,j,a[j][i].real,a[j][i].imag);
+                        printf("a[%d][%d]=%.9f + %.9fi\n",j,i,a[i][j].real,a[i][j].imag);
                 }
         }
 
