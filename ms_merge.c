@@ -32,7 +32,7 @@ int main(int argc,char **argv)
 	int64_t numsamples;
 
 	nstime_t ns_b,ns_e;
-	nstime_t ns_b_round,ns_e_round;
+        nstime_t ns_b_round,ns_e_round;
 
 	float *data;
 	float b=0,delta;
@@ -160,11 +160,11 @@ int main(int argc,char **argv)
 				return 1;
 			}
 
-            if(mstl3_convertsamples(seg,'f',truncate)!=MS_NOERROR)
+			if(mstl3_convertsamples(seg,'f',truncate)!=MS_NOERROR)
 			{
 				printf("fail converting data samples from integer to float\n");
-                return 1;
-            }
+				return 1;
+			}
 
 			b_edge=(seg->starttime-ns_b_round)*sampling_rate/1E9;
 			e_edge=(ns_e_round-seg->endtime)*sampling_rate/1E9;
