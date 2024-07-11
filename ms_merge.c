@@ -1,5 +1,5 @@
 /*
-gcc ms_merge.c -I/usr/local/sac/include -L/usr/local/sac/lib -lm -lmseed -lsacio
+gcc gap_check.c -I/usr/local/sac/include -L/usr/local/sac/lib -lm -lmseed -lsacio
 */
 
 #include <stdio.h>
@@ -8,6 +8,8 @@ gcc ms_merge.c -I/usr/local/sac/include -L/usr/local/sac/lib -lm -lmseed -lsacio
 
 #include <libmseed.h>
 #include <sacio.h>
+
+extern sac *current;
 
 int main(int argc,char **argv)
 {
@@ -22,19 +24,26 @@ int main(int argc,char **argv)
 	int npts;
 	int *num_cover;
 	int i;
+	int zyear,zjday,zhour,zmin,zsec,zmsec;
 	int nerr;
 
 	int8_t splitversion=0;
 	int8_t verbose=0;
 	int8_t truncate=0;
 	int8_t freeprvtptr=1;
+	uint8_t hour;
+	uint8_t min;
+	uint8_t sec;
+	uint32_t nsec;
+	uint16_t year;
+	uint16_t yday;
 	uint32_t flags=0;
 	int64_t numsamples;
 
 	nstime_t ns_b,ns_e;
         nstime_t ns_b_round,ns_e_round;
 
-	float *data;
+	float *data,*xdummy;
 	float b=0,delta;
 	double sampling_rate=200;
 
@@ -45,8 +54,6 @@ int main(int argc,char **argv)
 	char str_start[27];
 	char str_end[27];
 	char kname[]="foo.sac";
-
-	flags|=MSF_RECORDLIST;
 
 	ns_b=ms_timestr2nstime(begin);
 	ns_e=ms_timestr2nstime(end);
@@ -59,6 +66,8 @@ int main(int argc,char **argv)
 		printf("failed to initialize trace list\n");
 		return 1;
 	}
+
+	flags|=MSF_RECORDLIST;
 
 	retcode=ms3_readtracelist_timewin(&mstl,msfile1,NULL,ns_b_round,ns_e_round,splitversion,flags,verbose);
 	if(retcode!=MS_NOTSEED && retcode!=MS_NOERROR)
@@ -202,8 +211,29 @@ int main(int argc,char **argv)
 	}
 
 	delta=1/sampling_rate;
+	if(ms_nstime2time(ns_b_round,&year,&yday,&hour,&min,&sec,&nsec)!=MS_NOERROR)
+	{
+		printf("fail to convert nanoseconds time to time\n");
+		return 1;
+	}
+	zyear=year;
+	zjday=yday;
+	zhour=hour;
+	zmin=min;
+	zsec=sec;
+	zmsec=nsec/1E6;
+
 	newhdr();
-	wsac1(kname,data,&npts,&b,&delta,&nerr,strlen(kname));
+	setnhv("npts",&npts,&nerr,strlen("npts"));
+	setnhv("nzyear",&zyear,&nerr,strlen("nzyear"));
+	setnhv("nzjday",&zjday,&nerr,strlen("nzjday"));
+	setnhv("nzhour",&zhour,&nerr,strlen("nzhour"));
+	setnhv("nzmin",&zmin,&nerr,strlen("nzmin"));
+	setnhv("nzsec",&zsec,&nerr,strlen("nzsec"));
+	setnhv("nzmsec",&zmsec,&nerr,strlen("nzmsec"));
+	setfhv("b",&b,&nerr,strlen("b"));
+	setfhv("delta",&delta,&nerr,strlen("delta"));
+	wsac0(kname,xdummy,data,&nerr,strlen(kname));
 
 	if(nerr)
 	{
