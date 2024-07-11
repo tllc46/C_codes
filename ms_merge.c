@@ -1,5 +1,5 @@
-/*
-gcc gap_check.c -I/usr/local/sac/include -L/usr/local/sac/lib -lm -lmseed -lsacio
+/* 컴파일 방법
+gcc ms_merge.c -I/usr/local/sac/include -L/usr/local/sac/lib -lm -lmseed -lsacio
 */
 
 #include <stdio.h>
@@ -58,7 +58,7 @@ int main(int argc,char **argv)
 	ns_b=ms_timestr2nstime(begin);
 	ns_e=ms_timestr2nstime(end);
 
-	ns_b_round=((long double)round(ns_b/1E9*sampling_rate)/sampling_rate)*1E9;
+	ns_b_round=((long double)round(ns_b/1E9*sampling_rate)/sampling_rate)*1E9; //소숫점 유효 숫자 유지를 위해 long double로 형변환
         ns_e_round=((long double)round(ns_e/1E9*sampling_rate)/sampling_rate)*1E9;
 
 	if(!(mstl=mstl3_init(NULL)))
@@ -147,7 +147,7 @@ int main(int argc,char **argv)
 		tid=tid->next[0];
 	}
 
-	npts=(ns_e_round-ns_b_round)/1E9*sampling_rate+1;
+	npts=(ns_e_round-ns_b_round)/1E9*sampling_rate+1; //마지막 시간 포함하므로 +1
 
 	data=(float *)malloc(sizeof(float)*npts);
 	num_cover=(int *)malloc(sizeof(int)*npts);
