@@ -1,5 +1,5 @@
 /** 
- * @file   distaz.c
+ * @file   sac-102.0/src/ucf/distaz.c
  * 
  * @brief   Compute distance and azimuth
  * 
