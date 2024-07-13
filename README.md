@@ -13,7 +13,7 @@ hdroutput.c: SAC header 보기 좋게 출력
 
 matlab_c_api.c: MatLab-C interface, stla, stlo 변경
 
-ms_merge.c: MSEED 파일 trace들 1개의 SAC 파일로 병합
+ms_merge.c: MSEED file trace들 1개의 SAC file로 병합
 
 vhdrupgrade.c: 정의된 header를 version 6->7로 upgrade
 
