@@ -14,8 +14,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/libchst.so
 
 (3) sac에서 사용
 sac
-load chst
-chst arg1 arg2 arg3 ...
+SAC> load chst
+SAC> chst arg1 arg2 arg3 ...
 
 (4)
 "Storing data without a filename"이 뜨는데 이는 dfm/updatedfl.c/updatedfl()에서
