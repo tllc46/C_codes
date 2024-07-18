@@ -20,7 +20,7 @@ SAC> chst arg1 arg2 arg3 ...
 (4)
 "Storing data without a filename"이 뜨는데 이는 dfm/updatedfl.c/updatedfl()에서
 호출한 sacput(s)가 원인
-bs/iniam.c/sacput() 원형을 고치면 된다
+bs/iniam.c/sacput() 원형 고치면 된다
 */
 
 #include <stdio.h>
