@@ -96,7 +96,6 @@ int main(int argc,char **argv)
 	tid=mstl->traces.next[0];
 	while(tid)
 	{
-		tid=mstl->traces.next[0];
 		if(!ms_nstime2timestr(tid->earliest,str_start,ISOMONTHDAY,MICRO))
 		{
 			printf("failed to convert trace ID earliest\n");
