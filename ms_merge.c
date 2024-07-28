@@ -9,8 +9,6 @@ gcc ms_merge.c -I/usr/local/sac/include -L/usr/local/sac/lib -lm -lmseed -lsacio
 #include <libmseed.h>
 #include <sacio.h>
 
-extern sac *current;
-
 int main(int argc,char **argv)
 {
 	MS3TraceList *mstl=NULL;
