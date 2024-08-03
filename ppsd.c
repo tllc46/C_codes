@@ -24,7 +24,7 @@ double period_step_octaves=0.125;
 int npts_1d;
 double delta;
 int seg_len,nseg_1d,nstep;
-int nfft,nhop,nwin,nfreq,ntaper;
+int exponent,nfft,nhop,nwin,nfreq,ntaper;
 int nfreq_no_zero,nfreq_bin;
 int *right_idx,*left_idx;
 double *deviation;
@@ -54,15 +54,8 @@ int8_t freeprvtptr=1;
 void init_global(void)
 {
 	int step,win_len;
-	int exponent;
-	double *frequency_log2;
-	double right_exp,left_exp;
-	evalresp_options *options=NULL;
-	evalresp_filter *filter=NULL;
-	evalresp_channels *channels=NULL;
-	evalresp_response *response=NULL;
 
-	int i,jr=0,jl=0;
+	int i;
 
 	npts_1d=sec_1d*sampling_rate;
 	delta=(double)1/sampling_rate;
@@ -80,36 +73,9 @@ void init_global(void)
 	nhop=nfft/4; //75% overlap -> 25% hop
 	nwin=(seg_len-nfft)/nhop+1;
 	nfreq=nfft/2+1;
-	ntaper=0.1*nfft;
-
-	//log2 frequency
 	nfreq_no_zero=nfreq-1;
-	frequency_log2=(double *)malloc(nfreq_no_zero*sizeof(double));
-	for(i=0;i<nfreq_no_zero;i++)
-	{
-		frequency_log2[i]=log2(i+1);
-	}
-
-	//frequency bin and smoothing window index
 	nfreq_bin=(exponent-1)/period_step_octaves+1;
-	right_idx=(int *)malloc(nfreq_bin*sizeof(int));
-	left_idx=(int *)malloc(nfreq_bin*sizeof(int));
-	for(i=0;i<nfreq_bin;i++)
-	{
-		right_exp=i*period_step_octaves+0.5*period_smoothing_width_octaves;
-		while(frequency_log2[jr]<=right_exp && jr<nfreq_no_zero)
-		{
-			jr++;
-		}
-		right_idx[i]=jr;
-
-		left_exp=i*period_step_octaves-0.5*period_smoothing_width_octaves;
-		while(frequency_log2[jl]<left_exp && jl<nfreq_no_zero)
-		{
-			jl++;
-		}
-		left_idx[i]=jl;
-	}
+	ntaper=0.1*nfft;
 
 	//initialize deviation
 	deviation=(double *)malloc(nfft*sizeof(double));
@@ -128,23 +94,6 @@ void init_global(void)
 	}
 	taper_factor=2*taper_factor;
 	taper_factor+=nfft-2*ntaper;
-
-	//calculate instrumental response
-	evalresp_new_options(NULL,&options);
-	evalresp_new_filter(NULL,&filter);
-	options->min_freq=0;
-	options->max_freq=sampling_rate/2;
-	options->nfreq=nfreq;
-	options->lin_freq=1;
-	options->format=evalresp_complex_output_format;
-	options->unit=evalresp_acceleration_unit;
-	evalresp_filename_to_channels(NULL,"/home/tllc46/48NAS1/tllc46/NS/RESP/RESP.NS.N081..HHZ",options,filter,&channels);
-	evalresp_channel_to_response(NULL,channels->channels[0],options,&response);
-	respamp=(double *)malloc(nfreq_no_zero*sizeof(double));
-	for(i=0;i<nfreq_no_zero;i++)
-	{
-		respamp[i]=response->rvec[i+1].real*response->rvec[i+1].real+response->rvec[i+1].imag*response->rvec[i+1].imag;
-	}
 
 	//data and mask arrays
 	data=(double *)malloc(2*npts_1d*sizeof(double));
@@ -165,12 +114,6 @@ void init_global(void)
 	}
 
 	mstl_flags|=MSF_UNPACKDATA;
-
-	free(frequency_log2);
-	evalresp_free_options(&options);
-	evalresp_free_filter(&filter);
-	evalresp_free_channels(&channels);
-	evalresp_free_response(&response);
 }
 
 void term_global(void)
@@ -187,6 +130,74 @@ void term_global(void)
 	free(spec);
 	free(psd);
 	free(gap_psd);
+}
+
+void init_smooth(void)
+{
+	double *frequency_log2;
+	double right_exp,left_exp;
+
+	int i,jr=0,jl=0;
+
+	frequency_log2=(double *)malloc(nfreq_no_zero*sizeof(double));
+	for(i=0;i<nfreq_no_zero;i++)
+	{
+		frequency_log2[i]=log2(i+1);
+	}
+
+	right_idx=(int *)malloc(nfreq_bin*sizeof(int));
+	left_idx=(int *)malloc(nfreq_bin*sizeof(int));
+	for(i=0;i<nfreq_bin;i++)
+	{
+		right_exp=i*period_step_octaves+0.5*period_smoothing_width_octaves;
+		while(frequency_log2[jr]<=right_exp && jr<nfreq_no_zero)
+		{
+			jr++;
+		}
+		right_idx[i]=jr;
+
+		left_exp=i*period_step_octaves-0.5*period_smoothing_width_octaves;
+		while(frequency_log2[jl]<left_exp && jl<nfreq_no_zero)
+		{
+			jl++;
+		}
+		left_idx[i]=jl;
+	}
+
+	free(frequency_log2);
+}
+
+void init_resp(void)
+{
+	evalresp_options *options=NULL;
+	evalresp_filter *filter=NULL;
+	evalresp_channels *channels=NULL;
+	evalresp_response *response=NULL;
+
+	int i;
+
+	evalresp_new_options(NULL,&options);
+	evalresp_new_filter(NULL,&filter);
+	options->min_freq=0;
+	options->max_freq=sampling_rate/2;
+	options->nfreq=nfreq;
+	options->lin_freq=1;
+	options->format=evalresp_complex_output_format;
+	options->unit=evalresp_acceleration_unit;
+
+	evalresp_filename_to_channels(NULL,"/home/tllc46/48NAS1/tllc46/Jeju/RESP/Broadband/RESP.05.SS10..HHZ",options,filter,&channels);
+	evalresp_channel_to_response(NULL,channels->channels[0],options,&response);
+
+	respamp=(double *)malloc(nfreq_no_zero*sizeof(double));
+	for(i=0;i<nfreq_no_zero;i++)
+	{
+		respamp[i]=response->rvec[i+1].real*response->rvec[i+1].real+response->rvec[i+1].imag*response->rvec[i+1].imag;
+	}
+
+	evalresp_free_options(&options);
+	evalresp_free_filter(&filter);
+	evalresp_free_channels(&channels);
+	evalresp_free_response(&response);
 }
 
 void init_date(char *begin_str,char *end_str)
@@ -320,7 +331,7 @@ int merge_seg(MS3TraceList *mstl,time_t day_smpl,double *data,int *mask)
 int read_data(char *stnm,time_t day_smpl,double *data,int *mask)
 {
 	struct tm day_tm;
-	char filepath[50];
+	char filepath[68];
 	glob_t matches;
 	MS3TraceList *mstl=NULL;
 
@@ -330,7 +341,7 @@ int read_data(char *stnm,time_t day_smpl,double *data,int *mask)
 	gmtime_r(&day_smpl,&day_tm);
 
 	//construct filepath pattern
-	sprintf(filepath,"/home/tllc46/NSNAS/%s/HHZ/NS.%s.HHZ.%d.%03d*",stnm,stnm,1900+day_tm.tm_year,1+day_tm.tm_yday);
+	sprintf(filepath,"/home/tllc46/48NAS2/symbolic.jeju/05.%s/HHZ/05.%s.HHZ.%d.%03d*",stnm,stnm,1900+day_tm.tm_year,1+day_tm.tm_yday);
 
 	//glob pattern match
 	status=glob(filepath,glob_flags,NULL,&matches);
@@ -344,8 +355,6 @@ int read_data(char *stnm,time_t day_smpl,double *data,int *mask)
 		fprintf(stderr,"Error in glob pattern matching\n");
 		return -1;
 	}
-	/*printf("%ld\n",matches.gl_pathc);
-	printf("%s\n",matches.gl_pathv[0]);*/
 
 	//read mseed file to trace list
 	while(i<matches.gl_pathc)
@@ -461,7 +470,6 @@ void calculate_psd(void)
 			spec[j]=10*log10(spec[j]);
 		}
 
-
 		for(j=0;j<nfreq_bin;j++)
 		{
 			for(k=left_idx[j];k<right_idx[j];k++)
@@ -493,14 +501,15 @@ void next_day(int *cur_day_gap,int *next_day_gap)
 
 int main(int argc,char **argv)
 {
-	init_global();
-
 	int cur_day_gap,next_day_gap;
+	char info[20];
 
 	int i,j;
 
-	init_date("2021-10-27","2021-11-05");
-
+	init_global();
+	init_smooth();
+	init_resp();
+	init_date("2013-10-01","2015-10-31");
 	init_npy();
 
 	//read initial mseed file to trace list
@@ -513,7 +522,8 @@ int main(int argc,char **argv)
 	//main loop
 	for(i=0;i<nday;i++)
 	{
-		printf("%d-%02d-%02d starting\n",1900+cur_day_tm.tm_year,1+cur_day_tm.tm_mon,cur_day_tm.tm_mday);
+		strftime(info,20,"%Y-%m-%d starting",&cur_day_tm);
+		printf("%s\n",info);
 
 		//read next day mseed file to trace list
 		if((next_day_gap=read_data(argv[1],cur_day_smpl+sec_1d,data+npts_1d,mask+npts_1d))==-1)
