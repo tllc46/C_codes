@@ -1,5 +1,5 @@
 /*
-gcc test1.c -lmseed -lfftw3 -levalresp -levalresp_log -lspline -lmxmlev -lm
+gcc ppsd.c -lmseed -lfftw3 -levalresp -levalresp_log -lspline -lmxmlev -lm
 */
 
 #define _GNU_SOURCE
@@ -24,7 +24,7 @@ double period_step_octaves=0.125;
 int npts_1d;
 double delta;
 int seg_len,nseg_1d,nstep;
-int exponent,nfft,nhop,nwin,nfreq,ntaper;
+int nfft,nhop,nwin,nfreq,ntaper;
 int nfreq_no_zero,nfreq_bin;
 int *right_idx,*left_idx;
 double *deviation;
@@ -53,7 +53,7 @@ int8_t freeprvtptr=1;
 
 void init_global(void)
 {
-	int step,win_len;
+	int step,win_len,exponent;
 
 	int i;
 
@@ -465,7 +465,7 @@ void calculate_psd(void)
 			spec[j]=spec[j]*delta/(nwin*taper_factor*respamp[j]);
 			if(j!=nfreq_no_zero-1)
 			{
-				spec[j]=2*spec[j];
+				spec[j]=scaling_factor*spec[j];
 			}
 			spec[j]=10*log10(spec[j]);
 		}
