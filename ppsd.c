@@ -72,7 +72,7 @@ void init_global(void)
 	int i;
 
 	npts_1d=sec_1d*sampling_rate;
-	delta=1/sampling_rate;
+	delta=(double)1/sampling_rate;
 
 	//initialize data and mask arrays
 	data=(double *)malloc(2*npts_1d*sizeof(double));
