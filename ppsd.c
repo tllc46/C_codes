@@ -14,35 +14,49 @@ gcc ppsd.c -lmseed -lfftw3 -levalresp -levalresp_log -lspline -lmxmlev -lm
 #include <fftw3.h>
 #include <evalresp/public_api.h>
 
-int sec_1d=86400;
 int sampling_rate=200;
-int ppsd_length=3600;
-double overlap=0.5;
-int period_smoothing_width_octaves=1;
-double period_step_octaves=0.125;
+int len_avg=3600;
+double ovrlp_avg=0.5;
+int freq_smoothing_width_octaves=1;
+double freq_step_octaves=0.125;
+
+int sec_1d=86400;
+int scale_rfft=2;
+double dtiny=1e-21;
 
 int npts_1d;
 double delta;
-int seg_len,nseg_1d,nstep;
-int nfft,nhop,nwin,nfreq,ntaper;
-int nfreq_no_zero,nfreq_bin;
-int *right_idx,*left_idx;
-double *deviation;
-double *cos_taper,taper_factor=0;
-double *respamp;
+
 double *data;
 int *mask;
-double *input;
-fftw_complex *output;
-fftw_plan p;
-double *spec,*psd,*gap_psd;
-int scaling_factor=2;
 
-time_t cur_day_smpl;
-struct tm cur_day_tm;
-int nday,nseg;
+int npts_avg,npts_shift_avg,navg_1d;
+
+int nfft,npts_shift_sub,nsub,nfreq,nfreq_no_zero;
+
+double *fftw_input;
+fftw_complex *fftw_output;
+fftw_plan plan;
+
+double *deviation;
+
+int ntaper;
+double *cos_taper,scale_taper=0;
+
+int nfreq_bin;
+double *spectrum,*psd,*psd_gap;
+
+int *right_idx,*left_idx;
+
+double *resp_amp;
+
+time_t sct_cur_day;
+struct tm bdt_cur_day;
+int nday,navg;
 
 FILE *fp;
+
+int cur_day_gap,next_day_gap;
 
 int glob_flags=0;
 int8_t splitversion=0;
@@ -53,121 +67,135 @@ int8_t freeprvtptr=1;
 
 void init_global(void)
 {
-	int step,win_len,exponent;
+	int shift_avg,win_len,exponent;
 
 	int i;
 
 	npts_1d=sec_1d*sampling_rate;
-	delta=(double)1/sampling_rate;
-	seg_len=sampling_rate*ppsd_length;
-	step=ppsd_length*(1-overlap);
-	nseg_1d=sec_1d/step;
-	nstep=step*sampling_rate;
+	delta=1/sampling_rate;
 
-	//13 segments overlapping by 75%
-	//1 segment + 25% * 12 segments
-	win_len=ppsd_length*sampling_rate/4;
+	//initialize data and mask arrays
+	data=(double *)malloc(2*npts_1d*sizeof(double));
+	mask=(int *)malloc(2*npts_1d*sizeof(int));
 
+	//initialize average window
+	npts_avg=sampling_rate*len_avg;
+	shift_avg=len_avg*(1-ovrlp_avg);
+	npts_shift_avg=sampling_rate*shift_avg;
+	navg_1d=sec_1d/shift_avg;
+
+	//initialize sub window
+	//13 sub windows overlapping by 75%
+	//1 sub window + 25% * 12 sub windows
+	win_len=len_avg*sampling_rate/4;
 	exponent=log2(win_len);
 	nfft=exp2(exponent); //previous power of 2
-	nhop=nfft/4; //75% overlap -> 25% hop
-	nwin=(seg_len-nfft)/nhop+1;
+	npts_shift_sub=nfft/4; //75% overlap -> 25% shift
+	nsub=(npts_avg-nfft)/npts_shift_sub+1;
+	
+	//initialize FFT
 	nfreq=nfft/2+1;
 	nfreq_no_zero=nfreq-1;
-	nfreq_bin=(exponent-1)/period_step_octaves+1;
-	ntaper=0.1*nfft;
+	fftw_input=fftw_alloc_real(nfft);
+	fftw_output=fftw_alloc_complex(nfreq);
+	plan=fftw_plan_dft_r2c_1d(nfft,fftw_input,fftw_output,FFTW_MEASURE);
 
-	//initialize deviation
+	//initialize detrend
 	deviation=(double *)malloc(nfft*sizeof(double));
 	for(i=0;i<nfft/2;i++)
 	{
-		deviation[i+nfft/2]=0.5*(2*i+1)*delta;
-		deviation[-i+(nfft/2-1)]=-deviation[i+nfft/2];
+		deviation[nfft/2+i]=0.5*(2*i+1)*delta;
+		deviation[(nfft/2-1)-i]=-deviation[nfft/2+i];
 	}
 
-	//initialize cosine taper function
+	//initialize cosine taper
+	ntaper=0.1*nfft;
 	cos_taper=(double *)malloc(ntaper*sizeof(double));
 	for(i=0;i<ntaper;i++)
 	{
 		cos_taper[i]=0.5*(1-cos(M_PI*i/(ntaper-1)));
-		taper_factor+=cos_taper[i]*cos_taper[i];
+		scale_taper+=cos_taper[i]*cos_taper[i];
 	}
-	taper_factor=2*taper_factor;
-	taper_factor+=nfft-2*ntaper;
+	scale_taper=2*scale_taper;
+	scale_taper+=nfft-2*ntaper;
 
-	//data and mask arrays
-	data=(double *)malloc(2*npts_1d*sizeof(double));
-	mask=(int *)malloc(2*npts_1d*sizeof(int));
-
-	//ffts
-	input=fftw_alloc_real(nfft);
-	output=fftw_alloc_complex(nfreq);
-	p=fftw_plan_dft_r2c_1d(nfft,input,output,FFTW_MEASURE);
-
-	//psd results
-	spec=(double *)malloc(nfreq_no_zero*sizeof(double));
+	//initialize psd results
+	nfreq_bin=(exponent-1)/freq_step_octaves+1;
+	spectrum=(double *)malloc(nfreq_no_zero*sizeof(double));
 	psd=(double *)malloc(nfreq_bin*sizeof(double));
-	gap_psd=(double *)malloc(nfreq_bin*sizeof(double));
+	psd_gap=(double *)malloc(nfreq_bin*sizeof(double));
 	for(i=0;i<nfreq_bin;i++)
 	{
-		gap_psd[i]=999999;
+		psd_gap[i]=999999;
 	}
 
+	//initialize read trace
 	mstl_flags|=MSF_UNPACKDATA;
 }
 
 void term_global(void)
 {
-	free(right_idx);
-	free(left_idx);
-	free(deviation);
 	free(data);
 	free(mask);
-	fclose(fp);
-	fftw_free(input);
-	fftw_free(output);
-	fftw_destroy_plan(p);
-	free(spec);
+
+	fftw_free(fftw_input);
+	fftw_free(fftw_output);
+	fftw_destroy_plan(plan);
+
+	free(deviation);
+	
+	free(cos_taper);
+
+	free(spectrum);
 	free(psd);
-	free(gap_psd);
+	free(psd_gap);
+
+	free(right_idx);
+	free(left_idx);
+
+	free(resp_amp);
+
+	fclose(fp);
 }
 
-void init_smooth(void)
+void init_freq_smooth(void)
 {
-	double *frequency_log2;
-	double right_exp,left_exp;
+	double *log2_freq;
+	double exp_right,exp_left;
 
 	int i,jr=0,jl=0;
 
-	frequency_log2=(double *)malloc(nfreq_no_zero*sizeof(double));
+	//log2(frequency)
+	log2_freq=(double *)malloc(nfreq_no_zero*sizeof(double));
 	for(i=0;i<nfreq_no_zero;i++)
 	{
-		frequency_log2[i]=log2(i+1);
+		log2_freq[i]=log2(i+1);
 	}
 
+	//indices of spectral smoothing range in frequency
 	right_idx=(int *)malloc(nfreq_bin*sizeof(int));
 	left_idx=(int *)malloc(nfreq_bin*sizeof(int));
 	for(i=0;i<nfreq_bin;i++)
 	{
-		right_exp=i*period_step_octaves+0.5*period_smoothing_width_octaves;
-		while(frequency_log2[jr]<=right_exp && jr<nfreq_no_zero)
+		exp_right=i*freq_step_octaves+0.5*freq_smoothing_width_octaves;
+		while(log2_freq[jr]<=exp_right && jr<nfreq_no_zero)
 		{
 			jr++;
 		}
 		right_idx[i]=jr;
 
-		left_exp=i*period_step_octaves-0.5*period_smoothing_width_octaves;
-		while(frequency_log2[jl]<left_exp && jl<nfreq_no_zero)
+		exp_left=i*freq_step_octaves-0.5*freq_smoothing_width_octaves;
+		while(log2_freq[jl]<exp_left && jl<nfreq_no_zero)
 		{
 			jl++;
 		}
 		left_idx[i]=jl;
 	}
 
-	free(frequency_log2);
+	free(log2_freq);
 }
 
-void init_resp(void)
+void init_response(void)
 {
 	evalresp_options *options=NULL;
 	evalresp_filter *filter=NULL;
@@ -176,6 +204,7 @@ void init_resp(void)
 
 	int i;
 
+	//initialize evalresp options
 	evalresp_new_options(NULL,&options);
 	evalresp_new_filter(NULL,&filter);
 	options->min_freq=0;
@@ -185,13 +214,15 @@ void init_resp(void)
 	options->format=evalresp_complex_output_format;
 	options->unit=evalresp_acceleration_unit;
 
+	//calculate instrumental response
 	evalresp_filename_to_channels(NULL,"/home/tllc46/48NAS1/tllc46/Jeju/RESP/Broadband/RESP.05.SS10..HHZ",options,filter,&channels);
 	evalresp_channel_to_response(NULL,channels->channels[0],options,&response);
 
-	respamp=(double *)malloc(nfreq_no_zero*sizeof(double));
+	//calculate amplitude of instrumental response
+	resp_amp=(double *)malloc(nfreq_no_zero*sizeof(double));
 	for(i=0;i<nfreq_no_zero;i++)
 	{
-		respamp[i]=response->rvec[i+1].real*response->rvec[i+1].real+response->rvec[i+1].imag*response->rvec[i+1].imag;
+		resp_amp[i]=response->rvec[1+i].real*response->rvec[1+i].real+response->rvec[1+i].imag*response->rvec[1+i].imag;
 	}
 
 	evalresp_free_options(&options);
@@ -200,42 +231,47 @@ void init_resp(void)
 	evalresp_free_response(&response);
 }
 
-void init_date(char *begin_str,char *end_str)
+void init_date(char *str_begin,char *str_end)
 {
-	struct tm begin_tm,end_tm;
-	time_t begin_smpl,end_smpl;
+	struct tm bdt_begin,bdt_end; //broken-down time
+	time_t sct_begin,sct_end; //simple calendar time
 
-	strptime(begin_str,"%Y-%m-%d",&begin_tm);
-	begin_tm.tm_hour=0;
-	begin_tm.tm_min=0;
-	begin_tm.tm_sec=0;
-	cur_day_tm=begin_tm;
+	//begin date
+	strptime(str_begin,"%Y-%m-%d",&bdt_begin);
+	bdt_begin.tm_hour=0;
+	bdt_begin.tm_min=0;
+	bdt_begin.tm_sec=0;
+	bdt_cur_day=bdt_begin;
 
-	strptime(end_str,"%Y-%m-%d",&end_tm);
-	end_tm.tm_hour=0;
-	end_tm.tm_min=0;
-	end_tm.tm_sec=0;
+	//end date
+	strptime(str_end,"%Y-%m-%d",&bdt_end);
+	bdt_end.tm_hour=0;
+	bdt_end.tm_min=0;
+	bdt_end.tm_sec=0;
 
-	begin_smpl=timegm(&begin_tm);
-	cur_day_smpl=begin_smpl;
-	end_smpl=timegm(&end_tm);
-	nday=(end_smpl-begin_smpl)/sec_1d+1;
-	nseg=nday*nseg_1d;
+	//no. of total days
+	sct_begin=timegm(&bdt_begin);
+	sct_cur_day=sct_begin;
+	sct_end=timegm(&bdt_end);
+	nday=(sct_end-sct_begin)/sec_1d+1;
+	navg=nday*navg_1d;
 }
 
-void init_npy(void)
+void init_npy(char *stnm)
 {
+	char file_npy[9];
 	char magic[7]="\x93" "NUMPY";
-	char major=1,minor=0;
+	char major_ver=1,minor_ver=0;
 	unsigned short header_len=118;
 	char *header=(char *)malloc((header_len+1)*sizeof(char));
 	int status;
 
-	fp=fopen("foo1.npy","wb");
+	sprintf(file_npy,"%s.npy",stnm);
+	fp=fopen(file_npy,"wb");
 
 	memset(header,' ',header_len);
 
-	status=sprintf(header,"{'descr': '<f8', 'fortran_order': False, 'shape': (%d, %d), }",nseg,nfreq_bin);
+	status=sprintf(header,"{'descr': '<f8', 'fortran_order': False, 'shape': (%d, %d), }",navg,nfreq_bin);
 
 	header[status]=' ';
 	header[header_len-1]='\n';
@@ -243,20 +279,20 @@ void init_npy(void)
 
 	fputs(magic,fp);
 
-	fwrite(&major,sizeof(char),1,fp);
-	fwrite(&minor,sizeof(char),1,fp);
+	fwrite(&major_ver,sizeof(char),1,fp);
+	fwrite(&minor_ver,sizeof(char),1,fp);
 	fwrite(&header_len,sizeof(unsigned short),1,fp);
 
 	fputs(header,fp);
 }
 
-int merge_seg(MS3TraceList *mstl,time_t day_smpl,double *data,int *mask)
+int merge_seg(MS3TraceList *mstl,time_t sct_cur_day,double *data,int *mask)
 {
 	MS3TraceID *tid;
 	MS3TraceSeg *seg;
 	nstime_t prev_endtime=0;
-	int b_offset_data,b_offset_seg;
-	int e_offset_data,e_offset_seg;
+	int loff_data,loff_seg;
+	int roff_data,roff_seg;
 	int npts;
 
 	int i;
@@ -270,7 +306,6 @@ int merge_seg(MS3TraceList *mstl,time_t day_smpl,double *data,int *mask)
 			if(seg->endtime<prev_endtime)
 			{
 				//contained segment: just pass
-				prev_endtime=seg->endtime;
 				seg=seg->next;
 				continue;
 			}
@@ -282,38 +317,42 @@ int merge_seg(MS3TraceList *mstl,time_t day_smpl,double *data,int *mask)
 				return 1;
 			}
 
-			b_offset_data=round((seg->starttime/1E9-day_smpl)*sampling_rate);
-			b_offset_seg=0;
-			if(b_offset_data<0)
+			loff_data=round((seg->starttime/1E9-sct_cur_day)*sampling_rate);
+			loff_seg=0;
+			if(loff_data<0)
 			{
-				b_offset_seg=-b_offset_data;
-				b_offset_data=0;
+				//segment left part lies outside data
+				loff_seg=-loff_data;
+				loff_data=0;
 			}
 
-			e_offset_data=round(((day_smpl+sec_1d)-seg->endtime/1E9)*sampling_rate);
-			e_offset_seg=0;
-			if(e_offset_data<0)
+			roff_data=round(((sct_cur_day+sec_1d)-seg->endtime/1E9)*sampling_rate);
+			roff_seg=0;
+			if(roff_data<0)
 			{
-				e_offset_seg=-e_offset_data;
-				e_offset_data=0;
+				//segment right part lies outside data
+				roff_seg=-roff_data;
+				roff_data=0;
 			}
-			npts=seg->numsamples-b_offset_seg-e_offset_seg;
+
+			npts=seg->numsamples-loff_seg-roff_seg;
 
 			for(i=0;i<npts;i++)
 			{
-				if(mask[i+b_offset_data]==0)
+				if(mask[loff_data+i]==0)
 				{
-					//data is empty -> fill with segment
-					data[i+b_offset_data]=*((double *)seg->datasamples+i+b_offset_seg);
-					mask[i+b_offset_data]=1;
+					//data is empty -> fill it with segment
+					data[loff_data+i]=*((double *)seg->datasamples+loff_seg+i);
+					mask[loff_data+i]=1;
 				}
-				else if(mask[i+b_offset_data]==1)
+
+				else if(mask[loff_data+i]==1)
 				{
 					//data already occpuies -> check mismatch between segment and data
-					if(data[i+b_offset_data]!=*((double *)seg->datasamples+i+b_offset_seg))
+					if(data[loff_data+i]!=*((double *)seg->datasamples+loff_seg+i))
 					{
 						//mismatch between segment and data
-						mask[i+b_offset_data]=2;
+						mask[loff_data+i]=2;
 					}
 				}
 			}
@@ -328,23 +367,23 @@ int merge_seg(MS3TraceList *mstl,time_t day_smpl,double *data,int *mask)
 	return 0;
 }
 
-int read_data(char *stnm,time_t day_smpl,double *data,int *mask)
+int read_mseed(char *stnm,time_t sct_cur_day,double *data,int *mask)
 {
-	struct tm day_tm;
-	char filepath[68];
+	struct tm bdt_cur_day;
+	char pattern[68];
 	glob_t matches;
 	MS3TraceList *mstl=NULL;
 
 	int status;
 	int i=0;
 
-	gmtime_r(&day_smpl,&day_tm);
+	gmtime_r(&sct_cur_day,&bdt_cur_day);
 
-	//construct filepath pattern
-	sprintf(filepath,"/home/tllc46/48NAS2/symbolic.jeju/05.%s/HHZ/05.%s.HHZ.%d.%03d*",stnm,stnm,1900+day_tm.tm_year,1+day_tm.tm_yday);
+	//construct pattern
+	sprintf(pattern,"/home/tllc46/48NAS2/symbolic.jeju/05.%s/HHZ/05.%s.HHZ.%d.%03d*",stnm,stnm,1900+bdt_cur_day.tm_year,1+bdt_cur_day.tm_yday);
 
 	//glob pattern match
-	status=glob(filepath,glob_flags,NULL,&matches);
+	status=glob(pattern,glob_flags,NULL,&matches);
 	if(status==GLOB_NOMATCH)
 	{
 		fprintf(stderr,"No matches at all\n");
@@ -371,7 +410,7 @@ int read_data(char *stnm,time_t day_smpl,double *data,int *mask)
 	memset(mask,0,npts_1d*sizeof(int));
 
 	//merge segments
-	if(0<merge_seg(mstl,day_smpl,data,mask))
+	if(0<merge_seg(mstl,sct_cur_day,data,mask))
 	{
 		fprintf(stderr,"Error in merging segments\n");
 		return -1;
@@ -382,7 +421,7 @@ int read_data(char *stnm,time_t day_smpl,double *data,int *mask)
 	return 0;
 }
 
-void rtr(double *data)
+void detrend(double *data)
 {
 	double denominator=delta*delta*(nfft-1)*nfft*(nfft+1)/12;
 	double numerator=0;
@@ -391,12 +430,14 @@ void rtr(double *data)
 
 	int i;
 
+	//mean_y
 	for(i=0;i<nfft;i++)
 	{
 		mean+=data[i];
 	}
 	mean=mean/nfft;
 
+	//covariance_xy
 	for(i=0;i<nfft;i++)
 	{
 		numerator+=deviation[i]*(data[i]-mean);
@@ -406,7 +447,7 @@ void rtr(double *data)
 
 	for(i=0;i<nfft;i++)
 	{
-		input[i]=data[i]-mean-slope*deviation[i];
+		fftw_input[i]=data[i]-mean-slope*deviation[i];
 	}
 }
 
@@ -416,65 +457,70 @@ void taper(double *data)
 
 	for(i=0;i<ntaper;i++)
 	{
-		input[i]=data[i]*cos_taper[i];
-		input[(nfft-1)-i]=data[(nfft-1)-i]*cos_taper[i];
+		fftw_input[i]=data[i]*cos_taper[i];
+		fftw_input[(nfft-1)-i]=data[(nfft-1)-i]*cos_taper[i];
 	}
 }
 
 void calculate_psd(void)
 {
-	int gap_flag;
+	int flag_gap;
 	int i,j,k;
 
-	for(i=0;i<nseg_1d;i++)
+	for(i=0;i<navg_1d;i++)
 	{
-		gap_flag=0;
-		for(j=0;j<seg_len;j++)
+		flag_gap=0;
+		for(j=0;j<npts_avg;j++)
 		{
-			if(mask[i*nstep+j]!=1)
+			if(mask[i*npts_shift_avg+j]!=1)
 			{
-				gap_flag=1;
+				//average window contains gap
+				flag_gap=1;
 				break;
 			}
 		}
 
-		if(gap_flag)
+		if(flag_gap)
 		{
-			fprintf(stderr,"%02d/%d segment gap exists\n",i+1,nseg_1d);
-			fwrite(gap_psd,sizeof(double),nfreq_bin,fp);
+			fprintf(stderr,"%02d/%d average window gap exists\n",i+1,navg_1d);
+			fwrite(psd_gap,sizeof(double),nfreq_bin,fp);
 			continue;
 		}
 
-		memset(spec,0,nfreq_no_zero*sizeof(double));
+		memset(spectrum,0,nfreq_no_zero*sizeof(double));
 		memset(psd,0,nfreq_bin*sizeof(double));
 
-		for(j=0;j<nwin;j++)
+		for(j=0;j<nsub;j++)
 		{
-			rtr(data+i*nstep+j*nhop);
-			taper(input);
-			fftw_execute(p);
+			detrend(data+i*npts_shift_avg+j*npts_shift_sub);
+			taper(fftw_input);
+			fftw_execute(plan);
 
 			for(k=0;k<nfreq_no_zero;k++)
 			{
-				spec[k]+=output[k+1][0]*output[k+1][0]+output[k+1][1]*output[k+1][1];
+				spectrum[k]+=fftw_output[1+k][0]*fftw_output[1+k][0]+fftw_output[1+k][1]*fftw_output[1+k][1];
 			}
 		}
 
 		for(j=0;j<nfreq_no_zero;j++)
 		{
-			spec[j]=spec[j]*delta/(nwin*taper_factor*respamp[j]);
+			spectrum[j]=spectrum[j]*delta/(nsub*scale_taper*resp_amp[j]);
 			if(j!=nfreq_no_zero-1)
 			{
-				spec[j]=scaling_factor*spec[j];
+				spectrum[j]=scale_rfft*spectrum[j];
 			}
-			spec[j]=10*log10(spec[j]);
+			if(spectrum[j]<dtiny)
+			{
+				spectrum[j]=dtiny;
+			}
+			spectrum[j]=10*log10(spectrum[j]);
 		}
 
 		for(j=0;j<nfreq_bin;j++)
 		{
 			for(k=left_idx[j];k<right_idx[j];k++)
 			{
-				psd[j]+=spec[k];
+				psd[j]+=spectrum[k];
 			}
 			psd[j]=psd[j]/(right_idx[j]-left_idx[j]);
 		}
@@ -483,15 +529,15 @@ void calculate_psd(void)
 	}
 }
 
-void next_day(int *cur_day_gap,int *next_day_gap)
+void next_day(void)
 {
 	//shift day
-	cur_day_smpl+=sec_1d;
-	gmtime_r(&cur_day_smpl,&cur_day_tm);
+	sct_cur_day+=sec_1d;
+	gmtime_r(&sct_cur_day,&bdt_cur_day);
 
-	*cur_day_gap=*next_day_gap;
+	cur_day_gap=next_day_gap;
 
-	if(!*next_day_gap)
+	if(!next_day_gap)
 	{
 		//shift data and mask array
 		memmove(data,data+npts_1d,npts_1d*sizeof(double));
@@ -501,19 +547,18 @@ void next_day(int *cur_day_gap,int *next_day_gap)
 
 int main(int argc,char **argv)
 {
-	int cur_day_gap,next_day_gap;
 	char info[20];
 
 	int i,j;
 
 	init_global();
-	init_smooth();
-	init_resp();
+	init_freq_smooth();
+	init_response();
 	init_date("2013-10-01","2015-10-31");
-	init_npy();
+	init_npy(argv[1]);
 
 	//read initial mseed file to trace list
-	if((cur_day_gap=read_data(argv[1],cur_day_smpl,data,mask))==-1)
+	if((cur_day_gap=read_mseed(argv[1],sct_cur_day,data,mask))==-1)
 	{
 		fprintf(stderr,"Error in reading data\n");
 		return 1;
@@ -522,11 +567,11 @@ int main(int argc,char **argv)
 	//main loop
 	for(i=0;i<nday;i++)
 	{
-		strftime(info,20,"%Y-%m-%d starting",&cur_day_tm);
+		strftime(info,20,"%Y-%m-%d starting",&bdt_cur_day);
 		printf("%s\n",info);
 
 		//read next day mseed file to trace list
-		if((next_day_gap=read_data(argv[1],cur_day_smpl+sec_1d,data+npts_1d,mask+npts_1d))==-1)
+		if((next_day_gap=read_mseed(argv[1],sct_cur_day+sec_1d,data+npts_1d,mask+npts_1d))==-1)
 		{
 			fprintf(stderr,"Error in reading data\n");
 			return 1;
@@ -535,17 +580,17 @@ int main(int argc,char **argv)
 		if(cur_day_gap==1)
 		{
 			fprintf(stderr,"no file at all\n");
-			for(j=0;j<nseg_1d;j++)
+			for(j=0;j<navg_1d;j++)
 			{
-				fwrite(gap_psd,sizeof(double),nfreq_bin,fp);
+				fwrite(psd_gap,sizeof(double),nfreq_bin,fp);
 			}
-			next_day(&cur_day_gap,&next_day_gap);
+			next_day();
 			continue;
 		}
 
 		calculate_psd();
 
-		next_day(&cur_day_gap,&next_day_gap);
+		next_day();
 	}
 
 	term_global();
