@@ -326,7 +326,7 @@ int merge_seg(MS3TraceList *mstl,time_t sct_cur_day,double *data,int *mask)
 				loff_data=0;
 			}
 
-			roff_data=round(((sct_cur_day+sec_1d)-seg->endtime/1E9)*sampling_rate);
+			roff_data=round(((sct_cur_day+sec_1d)-seg->endtime/1E9)*sampling_rate)-1;
 			roff_seg=0;
 			if(roff_data<0)
 			{
