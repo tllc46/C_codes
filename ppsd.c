@@ -231,20 +231,20 @@ void init_response(void)
 	evalresp_free_response(&response);
 }
 
-void init_date(char *str_begin,char *str_end)
+void init_date(char *begin_str,char *end_str)
 {
 	struct tm begin_bdt,end_bdt; //broken-down time
 	time_t begin_sct,end_sct; //simple calendar time
 
 	//begin date
-	strptime(str_begin,"%Y-%m-%d",&begin_bdt);
+	strptime(begin_str,"%Y-%m-%d",&begin_bdt);
 	begin_bdt.tm_hour=0;
 	begin_bdt.tm_min=0;
 	begin_bdt.tm_sec=0;
 	cur_day_bdt=begin_bdt;
 
 	//end date
-	strptime(str_end,"%Y-%m-%d",&end_bdt);
+	strptime(end_str,"%Y-%m-%d",&end_bdt);
 	end_bdt.tm_hour=0;
 	end_bdt.tm_min=0;
 	end_bdt.tm_sec=0;
