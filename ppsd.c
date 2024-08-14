@@ -79,7 +79,7 @@ void init_global(void)
 	mask=(int *)malloc(2*npts_1d*sizeof(int));
 
 	//initialize average window
-	avg_npts=sampling_rate*avg_len;
+	avg_npts=avg_len*sampling_rate;
 	avg_shift=avg_len*(1-avg_ovrlp);
 	avg_shift_npts=avg_shift*sampling_rate;
 	navg_1d=sec_1d/avg_shift;
