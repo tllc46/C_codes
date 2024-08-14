@@ -81,7 +81,7 @@ void init_global(void)
 	//initialize average window
 	avg_npts=sampling_rate*avg_len;
 	avg_shift=avg_len*(1-avg_ovrlp);
-	avg_shift_npts=sampling_rate*avg_shift;
+	avg_shift_npts=avg_shift*sampling_rate;
 	navg_1d=sec_1d/avg_shift;
 
 	//initialize sub window
