@@ -1,5 +1,5 @@
 /*
-gcc test4.c -lmseed -lfftw3 -llapack -lrefblas -lgfortran -lm
+gcc cov_mat_an.c -lmseed -lfftw3 -llapack -lrefblas -lgfortran -lm
 */
 
 #define _GNU_SOURCE
@@ -146,7 +146,7 @@ void term_global(void)
 
 void init_date(char *begin_str,char *end_str)
 {
-	struct tm begin_bdt,bdt_end; //broken-down time
+	struct tm begin_bdt,end_bdt; //broken-down time
 	time_t begin_sct,end_sct; //simple calendar time
 
 	//begin date
@@ -157,15 +157,15 @@ void init_date(char *begin_str,char *end_str)
 	cur_day_bdt=begin_bdt;
 
 	//end date
-	strptime(end_str,"%Y-%m-%d",&bdt_end);
-	bdt_end.tm_hour=0;
-	bdt_end.tm_min=0;
-	bdt_end.tm_sec=0;
+	strptime(end_str,"%Y-%m-%d",&end_bdt);
+	end_bdt.tm_hour=0;
+	end_bdt.tm_min=0;
+	end_bdt.tm_sec=0;
 
 	//no. of total days
 	begin_sct=timegm(&begin_bdt);
 	cur_day_sct=begin_sct;
-	end_sct=timegm(&bdt_end);
+	end_sct=timegm(&end_bdt);
 	nday=(end_sct-begin_sct)/sec_1d+1;
 	navg=nday*navg_1d;
 
