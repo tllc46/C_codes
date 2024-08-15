@@ -424,6 +424,7 @@ void detrend(double *data)
 
 void decimate(void)
 {
+	//just desampling... different from SAC's decimate and same as obspy's decimatew with no_filter=True
 	int i,j;
 
 	for(i=0;i<nsta_avg;i++)
@@ -435,7 +436,7 @@ void decimate(void)
 	}
 }
 
-void cvmat_avg(void)
+void cov_mat_avg(void)
 {
 	char uplo='U';
 	int n=nsta_avg;
@@ -524,7 +525,7 @@ void calculate_spcwdth(void)
 
 		detrend(data+i*avg_shift_npts_0);
 		decimate();
-		cvmat_avg();
+		cov_mat_avg();
 
 		ldz=nsta_avg;
 		for(j=0;j<nfreq_band;j++)
