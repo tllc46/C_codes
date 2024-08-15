@@ -1,5 +1,5 @@
 /*
-gcc cov_mat_an.c -lmseed -lfftw3 -llapack -lrefblas -lgfortran -lm
+gcc test4.c -lmseed -lfftw3 -llapack -lrefblas -lgfortran -lm
 */
 
 #define _GNU_SOURCE
@@ -144,29 +144,29 @@ void term_global(void)
 	free(iwork);
 }
 
-void init_date(char *str_begin,char *str_end)
+void init_date(char *begin_str,char *end_str)
 {
-	struct tm bdt_begin,bdt_end; //broken-down time
-	time_t sct_begin,sct_end; //simple calendar time
+	struct tm begin_bdt,bdt_end; //broken-down time
+	time_t begin_sct,end_sct; //simple calendar time
 
 	//begin date
-	strptime(str_begin,"%Y-%m-%d",&bdt_begin);
-	bdt_begin.tm_hour=0;
-	bdt_begin.tm_min=0;
-	bdt_begin.tm_sec=0;
-	cur_day_bdt=bdt_begin;
+	strptime(begin_str,"%Y-%m-%d",&begin_bdt);
+	begin_bdt.tm_hour=0;
+	begin_bdt.tm_min=0;
+	begin_bdt.tm_sec=0;
+	cur_day_bdt=begin_bdt;
 
 	//end date
-	strptime(str_end,"%Y-%m-%d",&bdt_end);
+	strptime(end_str,"%Y-%m-%d",&bdt_end);
 	bdt_end.tm_hour=0;
 	bdt_end.tm_min=0;
 	bdt_end.tm_sec=0;
 
 	//no. of total days
-	sct_begin=timegm(&bdt_begin);
-	cur_day_sct=sct_begin;
-	sct_end=timegm(&bdt_end);
-	nday=(sct_end-sct_begin)/sec_1d+1;
+	begin_sct=timegm(&begin_bdt);
+	cur_day_sct=begin_sct;
+	end_sct=timegm(&bdt_end);
+	nday=(end_sct-begin_sct)/sec_1d+1;
 	navg=nday*navg_1d;
 
 	//next day
@@ -267,7 +267,7 @@ int merge_seg(MS3TraceList *mstl,time_t day_sct,double *data,int *mask)
 				return 1;
 			}
 
-			data_loff=round((seg->starttime/1E9-day_sct)*sampling_rate);
+			data_loff=round((seg->starttime/1E9-day_sct)*sampling_rate_0);
 			seg_loff=0;
 			if(data_loff<0)
 			{
@@ -276,7 +276,7 @@ int merge_seg(MS3TraceList *mstl,time_t day_sct,double *data,int *mask)
 				data_loff=0;
 			}
 
-			data_roff=round(((day_sct+sec_1d)-seg->endtime/1E9)*sampling_rate)-1;
+			data_roff=round(((day_sct+sec_1d)-seg->endtime/1E9)*sampling_rate_0)-1;
 			seg_roff=0;
 			if(data_roff<0)
 			{
