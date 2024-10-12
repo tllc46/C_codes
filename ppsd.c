@@ -41,7 +41,7 @@ fftw_plan plan;
 double *deviation;
 
 int ntaper;
-double *cos_taper,taper_scale=0;
+double *cos_taper,taper_scale;
 
 int nfreq_bin;
 double *spectrum,*psd,*psd_gap;
@@ -114,10 +114,8 @@ void init_global(void)
 	for(i=0;i<ntaper;i++)
 	{
 		cos_taper[i]=0.5*(1-cos(M_PI*i/(ntaper-1)));
-		taper_scale+=cos_taper[i]*cos_taper[i];
 	}
-	taper_scale=2*taper_scale;
-	taper_scale+=nfft-2*ntaper;
+	taper_scale=0.875*nfft;
 
 	//initialize psd results
 	nfreq_bin=(exponent-1)/freq_step_octaves+1;
