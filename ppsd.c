@@ -124,7 +124,7 @@ void init_global(void)
 	psd_gap=(double *)malloc(nfreq_bin*sizeof(double));
 	for(i=0;i<nfreq_bin;i++)
 	{
-		psd_gap[i]=999999;
+		psd_gap[i]=-999999;
 	}
 
 	//initialize read trace
