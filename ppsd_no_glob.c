@@ -1,5 +1,5 @@
 /*
-gcc ppsd.c -lmseed -lfftw3 -levalresp -levalresp_log -lspline -lmxmlev -lm
+gcc ppsd_no_glob.c -lmseed -lfftw3 -levalresp -levalresp_log -lspline -lmxmlev -lm
 */
 
 #define _GNU_SOURCE //for implicit declaration of function strptime
