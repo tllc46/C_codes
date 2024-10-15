@@ -414,7 +414,7 @@ int read_mseed(time_t cur_day_sct,double *data,int *mask)
 	gmtime_r(&cur_day_sct,&cur_day_bdt);
 
 	//construct pattern
-	snprintf(pattern,127+26,"%s.%d.%03d*",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
+	sprintf(pattern,"%s.%d.%03d*",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
 
 	//glob pattern match
 	status=glob(pattern,glob_flags,NULL,&matches);
