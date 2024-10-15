@@ -2,7 +2,7 @@
 gcc ppsd.c -lmseed -lfftw3 -levalresp -levalresp_log -lspline -lmxmlev -lm
 */
 
-#define _GNU_SOURCE
+#define _GNU_SOURCE //for implicit declaration of function strptime
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,8 +48,8 @@ int *right_idx,*left_idx;
 
 double *resp_amp;
 
-time_t cur_day_sct;
-struct tm cur_day_bdt;
+time_t cur_day_sct; //simple calendar time
+struct tm cur_day_bdt; //broken-down time
 int nday,navg;
 
 FILE *fp_out;
