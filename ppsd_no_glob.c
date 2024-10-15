@@ -419,7 +419,7 @@ int read_mseed(time_t cur_day_sct,double *data,int *mask)
 	}
 
 	//read mseed file to trace list
-	if(ret=ms3_readtracelist(&mstl,mspath,NULL,splitversion,mstl_flags,verbose))
+	if(ms3_readtracelist(&mstl,mspath,NULL,splitversion,mstl_flags,verbose))
 	{
 		fprintf(stderr,"Error in reading mseed file to trace list\n");
 		return -1;
