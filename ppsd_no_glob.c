@@ -403,14 +403,14 @@ int merge_seg(MS3TraceList *mstl,time_t cur_day_sct,double *data,int *mask)
 int read_mseed(time_t cur_day_sct,double *data,int *mask)
 {
 	struct tm cur_day_bdt;
-	struct stat sb;
 	char mspath[137];
+	struct stat sb;
 	MS3TraceList *mstl=NULL;
 
 	gmtime_r(&cur_day_sct,&cur_day_bdt);
 
-	//construct pattern
-	snprintf(mspath,127+26,"%s.%d.%03d",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
+	//construct mspath
+	snprintf(mspath,127+25,"%s.%d.%03d",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
 
 	if(stat(mspath,&sb))
 	{
