@@ -404,7 +404,7 @@ int merge_seg(MS3TraceList *mstl,time_t cur_day_sct,double *data,int *mask)
 int read_mseed(time_t cur_day_sct,double *data,int *mask)
 {
 	struct tm cur_day_bdt;
-	char pattern[68];
+	char pattern[138];
 	glob_t matches;
 	MS3TraceList *mstl=NULL;
 
@@ -414,7 +414,7 @@ int read_mseed(time_t cur_day_sct,double *data,int *mask)
 	gmtime_r(&cur_day_sct,&cur_day_bdt);
 
 	//construct pattern
-	sprintf(pattern,"%s.%d.%03d*",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
+	snprintf(pattern,127+26,"%s.%d.%03d*",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
 
 	//glob pattern match
 	status=glob(pattern,glob_flags,NULL,&matches);
