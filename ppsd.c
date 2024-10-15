@@ -614,7 +614,7 @@ int main(int argc,char **argv)
 
 		if(cur_day_gap==1)
 		{
-			fprintf(stderr,"no file at all\n");
+			fprintf(stderr,"No file at all\n");
 			for(j=0;j<navg_1d;j++)
 			{
 				fwrite(psd_gap,sizeof(double),nfreq_bin,fp_out);
