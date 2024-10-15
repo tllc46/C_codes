@@ -410,7 +410,7 @@ int read_mseed(time_t cur_day_sct,double *data,int *mask)
 	gmtime_r(&cur_day_sct,&cur_day_bdt);
 
 	//construct mspath
-	snprintf(mspath,127+25,"%s.%d.%03d",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
+	sprintf(mspath,"%s.%d.%03d",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
 
 	if(stat(mspath,&sb))
 	{
