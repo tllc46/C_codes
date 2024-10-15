@@ -65,39 +65,40 @@ int8_t freeprvtptr=1;
 
 void read_global(void)
 {
-	char line[128];
 	FILE *fp_in;
+	char line[128];
+	char *ret;
 
 	fp_in=fopen("ppsd.in","r");
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%d",&sampling_rate);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%d",&avg_len);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%lf",&avg_ovrlp);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%lf",&freq_smoothing_width_octaves);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%lf",&freq_step_octaves);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%s",begin_str);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%s",end_str);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%s",data_path);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%s",resp_path);
 
-	fgets(line,128,fp_in);
+	ret=fgets(line,128,fp_in);
 	sscanf(line,"%s",output_path);
 
 	fclose(fp_in);
