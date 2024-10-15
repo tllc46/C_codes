@@ -585,6 +585,7 @@ int main(int argc,char **argv)
 
 	int i,j;
 
+	read_global();
 	init_global();
 	init_freq_smooth();
 	init_response();
