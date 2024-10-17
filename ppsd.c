@@ -19,6 +19,7 @@ int avg_len=3600;
 double avg_ovrlp=0.5;
 int freq_smoothing_width_octaves=1;
 double freq_step_octaves=0.125;
+char begin_str[11]="2013-10-01",end_str[11]="2015-10-31";
 
 int sec_1d=86400;
 int rfft_scale=2;
@@ -229,7 +230,7 @@ void init_response(void)
 	evalresp_free_response(&response);
 }
 
-void init_date(char *begin_str,char *end_str)
+void init_date()
 {
 	struct tm begin_bdt,end_bdt; //broken-down time
 	time_t begin_sct,end_sct; //simple calendar time
@@ -552,7 +553,7 @@ int main(int argc,char **argv)
 	init_global();
 	init_freq_smooth();
 	init_response();
-	init_date("2013-10-01","2015-10-31");
+	init_date();
 	init_npy(argv[1]);
 
 	//read initial mseed file to trace list
