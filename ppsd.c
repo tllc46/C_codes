@@ -14,13 +14,15 @@ gcc ppsd.c -lmseed -lfftw3 -levalresp -levalresp_log -lspline -lmxmlev -lm
 #include <fftw3.h>
 #include <evalresp/public_api.h>
 
+int sampling_rate=200;
+int avg_len=3600;
+double avg_ovrlp=0.5;
+int freq_smoothing_width_octaves=1;
+double freq_step_octaves=0.125;
+
 int sec_1d=86400;
 int rfft_scale=2;
 double dtiny=1e-21;
-
-int sampling_rate,avg_len;
-double avg_ovrlp,freq_smoothing_width_octaves,freq_step_octaves;
-char begin_str[11],end_str[11],data_path[128],resp_path[128],output_path[128];
 
 int npts_1d;
 double delta;
@@ -52,7 +54,7 @@ time_t cur_day_sct; //simple calendar time
 struct tm cur_day_bdt; //broken-down time
 int nday,navg;
 
-FILE *fp_out;
+FILE *fp;
 
 int cur_day_gap,next_day_gap;
 
@@ -62,47 +64,6 @@ uint32_t mstl_flags=0;
 int8_t verbose=0;
 int8_t truncate=0;
 int8_t freeprvtptr=1;
-
-void read_global(void)
-{
-	FILE *fp_in;
-	char line[128];
-	char *ret;
-
-	fp_in=fopen("ppsd.in","r");
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%d",&sampling_rate);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%d",&avg_len);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%lf",&avg_ovrlp);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%lf",&freq_smoothing_width_octaves);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%lf",&freq_step_octaves);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%s",begin_str);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%s",end_str);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%s",data_path);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%s",resp_path);
-
-	ret=fgets(line,128,fp_in);
-	sscanf(line,"%s",output_path);
-
-	fclose(fp_in);
-}
 
 void init_global(void)
 {
@@ -192,7 +153,7 @@ void term_global(void)
 
 	free(resp_amp);
 
-	fclose(fp_out);
+	fclose(fp);
 }
 
 void init_freq_smooth(void)
@@ -252,7 +213,7 @@ void init_response(void)
 	options->unit=evalresp_acceleration_unit;
 
 	//calculate instrumental response
-	evalresp_filename_to_channels(NULL,resp_path,options,filter,&channels);
+	evalresp_filename_to_channels(NULL,"/home/tllc46/48NAS1/tllc46/Jeju/RESP/Broadband/RESP.05.SS10..HHZ",options,filter,&channels);
 	evalresp_channel_to_response(NULL,channels->channels[0],options,&response);
 
 	//calculate amplitude of instrumental response
@@ -268,7 +229,7 @@ void init_response(void)
 	evalresp_free_response(&response);
 }
 
-void init_date()
+void init_date(char *begin_str,char *end_str)
 {
 	struct tm begin_bdt,end_bdt; //broken-down time
 	time_t begin_sct,end_sct; //simple calendar time
@@ -294,15 +255,17 @@ void init_date()
 	navg=nday*navg_1d;
 }
 
-void init_npy(void)
+void init_npy(char *stnm)
 {
+	char npy_file[9];
 	char magic[7]="\x93" "NUMPY";
 	char major_ver=1,minor_ver=0;
 	unsigned short header_len=118;
 	char *header=(char *)malloc((header_len+1)*sizeof(char));
 	int status;
 
-	fp_out=fopen(output_path,"wb");
+	sprintf(npy_file,"%s.npy",stnm);
+	fp=fopen(npy_file,"wb");
 
 	memset(header,' ',header_len);
 
@@ -312,13 +275,13 @@ void init_npy(void)
 	header[header_len-1]='\n';
 	header[header_len]='\0';
 
-	fputs(magic,fp_out);
+	fputs(magic,fp);
 
-	fwrite(&major_ver,sizeof(char),1,fp_out);
-	fwrite(&minor_ver,sizeof(char),1,fp_out);
-	fwrite(&header_len,sizeof(unsigned short),1,fp_out);
+	fwrite(&major_ver,sizeof(char),1,fp);
+	fwrite(&minor_ver,sizeof(char),1,fp);
+	fwrite(&header_len,sizeof(unsigned short),1,fp);
 
-	fputs(header,fp_out);
+	fputs(header,fp);
 }
 
 int merge_seg(MS3TraceList *mstl,time_t cur_day_sct,double *data,int *mask)
@@ -402,10 +365,10 @@ int merge_seg(MS3TraceList *mstl,time_t cur_day_sct,double *data,int *mask)
 	return 0;
 }
 
-int read_mseed(time_t cur_day_sct,double *data,int *mask)
+int read_mseed(char *stnm,time_t cur_day_sct,double *data,int *mask)
 {
 	struct tm cur_day_bdt;
-	char pattern[138];
+	char pattern[68];
 	glob_t matches;
 	MS3TraceList *mstl=NULL;
 
@@ -415,7 +378,7 @@ int read_mseed(time_t cur_day_sct,double *data,int *mask)
 	gmtime_r(&cur_day_sct,&cur_day_bdt);
 
 	//construct pattern
-	sprintf(pattern,"%s.%d.%03d*",data_path,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
+	sprintf(pattern,"/home/tllc46/48NAS2/symbolic.jeju/05.%s/HHZ/05.%s.HHZ.%d.%03d*",stnm,stnm,1900+cur_day_bdt.tm_year,1+cur_day_bdt.tm_yday);
 
 	//glob pattern match
 	status=glob(pattern,glob_flags,NULL,&matches);
@@ -518,7 +481,7 @@ void calculate_psd(void)
 		if(gap_flag)
 		{
 			fprintf(stderr,"%02d/%d average window gap exists\n",i+1,navg_1d);
-			fwrite(psd_gap,sizeof(double),nfreq_bin,fp_out);
+			fwrite(psd_gap,sizeof(double),nfreq_bin,fp);
 			continue;
 		}
 
@@ -560,7 +523,7 @@ void calculate_psd(void)
 			psd[j]=psd[j]/(right_idx[j]-left_idx[j]);
 		}
 
-		fwrite(psd,sizeof(double),nfreq_bin,fp_out);
+		fwrite(psd,sizeof(double),nfreq_bin,fp);
 	}
 }
 
@@ -586,15 +549,14 @@ int main(int argc,char **argv)
 
 	int i,j;
 
-	read_global();
 	init_global();
 	init_freq_smooth();
 	init_response();
-	init_date();
-	init_npy();
+	init_date("2013-10-01","2015-10-31");
+	init_npy(argv[1]);
 
 	//read initial mseed file to trace list
-	if((cur_day_gap=read_mseed(cur_day_sct,data,mask))==-1)
+	if((cur_day_gap=read_mseed(argv[1],cur_day_sct,data,mask))==-1)
 	{
 		fprintf(stderr,"Error in reading data\n");
 		return 1;
@@ -607,7 +569,7 @@ int main(int argc,char **argv)
 		printf("%s\n",info);
 
 		//read next day mseed file to trace list
-		if((next_day_gap=read_mseed(cur_day_sct+sec_1d,data+npts_1d,mask+npts_1d))==-1)
+		if((next_day_gap=read_mseed(argv[1],cur_day_sct+sec_1d,data+npts_1d,mask+npts_1d))==-1)
 		{
 			fprintf(stderr,"Error in reading data\n");
 			return 1;
@@ -618,7 +580,7 @@ int main(int argc,char **argv)
 			fprintf(stderr,"No file at all\n");
 			for(j=0;j<navg_1d;j++)
 			{
-				fwrite(psd_gap,sizeof(double),nfreq_bin,fp_out);
+				fwrite(psd_gap,sizeof(double),nfreq_bin,fp);
 			}
 			next_day();
 			continue;
