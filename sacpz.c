@@ -40,6 +40,7 @@ int main(int argc,char **argv)
         }
         printf("constant=%f\n",pz->constant);
         printf("line=%s\n",pz->line);
+        printf("\n");
 
         trans.n=36000;
         trans.dt=delta;
@@ -53,12 +54,15 @@ int main(int argc,char **argv)
         printf("nfft=%d\n",trans.nfft);
         printf("nfreqs=%d\n",trans.nfreqs);
         printf("df=%f\n",trans.df);
+        printf("\n");
 
         resp=response_from_polezero(pz,&trans); // (source)/icm/libpz.c
 
         printf("n=%d\n",resp->n);
-        printf("re=%f %f %f\n",resp->re[0],resp->re[1],resp->re[2]);
-        printf("im=%f %f %f\n",resp->im[0],resp->im[1],resp->im[2]);
+        for(i=0;i<5;i++)
+        {
+                printf("%f + %f\n",resp->re[i],resp->im[i]);
+        }
 
         return 0;
 }
