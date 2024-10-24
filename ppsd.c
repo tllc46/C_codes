@@ -116,7 +116,7 @@ void init_global(void)
 	{
 		cos_taper[i]=0.5*(1-cos(M_PI*i/(ntaper-1)));
 	}
-	taper_scale=0.875*nfft;
+	taper_scale=0.875*nfft; //integral of cosine taper window
 
 	//initialize psd results
 	nfreq_bin=(exponent-1)/freq_step_octaves+1;
