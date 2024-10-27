@@ -1,20 +1,26 @@
 # C codes
-Fourier_trans.c: fftw library 활용
+Fourier_trans.c: Fourier transform using fftw library
 
-ch_st_hdrs.c: SAC IO 함수 활용하여 station header 변경
+ch_st_hdrs.c: change station header using SACIO library
 
-chst.c: external command를 load하여 station header 변경
+chst.c: change station header by loading external command in SAC
 
-cut.c: SAC library의 cut 함수 활용
+cov_mat_an.c: calculate short time covariance matrix (incomplete)
 
-diagonalize.c: lapack library 활용
+cut.c: cut using SAC library
 
-hdroutput.c: SAC header 보기 좋게 출력
+diagonalize.c: diagonalize matrix using lapack library
 
-matlab_c_api.c: MatLab-C interface, stla, stlo 변경
+distaz.c: stand alone sac-102.0/src/ucf/distaz.c
 
-ms_merge.c: MSEED file trace들 1개의 SAC file로 병합
+hdroutput.c: print SAC headers pretty
 
-vhdrupgrade.c: 정의된 header를 version 6->7로 upgrade
+matlab_c_api.c: change stla, stlo SAC headers using MatLab-C interface (incomplete)
 
-vhdrupgrade_undefined.c: 정의되지 않은 header를 version 6->7로 upgrade
+ms_merge.c: merge MSEED file traces to single SAC file
+
+ppsd.c: C version obspy.signal.spectral_estimation.PPSD, translated to C
+
+vhdrupgrade.c: upgrade defined SAC headers' version 6->7
+
+vhdrupgrade_undefined.c: upgrade undefined SAC headers' version 6->7
