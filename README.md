@@ -21,6 +21,8 @@ ms_merge.c: merge MSEED file traces to single SAC file
 
 ppsd.c: C version obspy.signal.spectral_estimation.PPSD, translated to C
 
+proj_geod.c: calculate distance, azimuth and back azimuth using PROJ C library
+
 vhdrupgrade.c: upgrade defined SAC headers' version 6->7
 
 vhdrupgrade_undefined.c: upgrade undefined SAC headers' version 6->7
