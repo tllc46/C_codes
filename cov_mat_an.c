@@ -424,7 +424,7 @@ void detrend(double *data)
 
 void decimate(void)
 {
-	//just desampling... different from SAC's decimate and same as obspy's decimatew with no_filter=True
+	//just desampling... different from SAC's decimate and same as obspy's decimate with no_filter=True
 	int i,j;
 
 	for(i=0;i<nsta_avg;i++)
