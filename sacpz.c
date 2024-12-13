@@ -17,7 +17,7 @@ int main(int argc,char **argv)
         int max=300000;
         int npts,nerr;
         float y[300000],b,delta;
-        char filer[25]="KS.CGYA.HGE.2019.005.SAC",filew[8]="foo.sac";
+        char filer[25]="KS.CGYA.HGE.2019.005.SAC";
         int i;
 
         pz_t *pz; // (binary)/include/sac.h, (source)/inc/icm.h
