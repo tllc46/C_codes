@@ -13,7 +13,7 @@ int main(int argc,char **argv)
 {
         int max=300000; //npts보다 충분히 큰 수
         int npts,nerr,i;
-        float x[1],y[300000],b,delta,df;
+        float y[300000],b,delta,df;
         char filer[11]="seismo.sac",filew[8]="foo.sac";
 
         fftwf_plan p;
