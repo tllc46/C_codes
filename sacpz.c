@@ -16,7 +16,7 @@ int main(int argc,char **argv)
 {
         int max=300000;
         int npts,nerr;
-        float x[1],y[300000],b,delta;
+        float y[300000],b,delta;
         char filer[25]="KS.CGYA.HGE.2019.005.SAC",filew[8]="foo.sac";
         int i;
 
