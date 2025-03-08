@@ -1,32 +1,28 @@
 # C codes
-Fourier_trans.c: fftw 라이브러리 사용 예시
+Fourier_trans.c: Fourier transform using fftw library
 
-ch_st_hdrs.c: SACIO 라이브러리 사용 예시
+ch_st_hdrs.c: change station header using SACIO library
 
-chst.c: SAC의 external command interface 사용 예시
+chst.c: change station header by loading external command in SAC
 
-cov_mat_an.c: 단기 공분산 행렬 계산 (미완성)
+cov_mat_an.c: calculate short time covariance matrix (incomplete)
 
-cut.c: SAC 라이브러리 사용 예시
+cut.c: cut using SAC library
 
-diagonalize.c: lapack 라이브러리 사용 예시
+diagonalize.c: diagonalize matrix using lapack library
 
-distaz.c: (source)/ucf/distaz.c stand alone
+distaz.c: stand alone sac-102.0/src/ucf/distaz.c
 
-hdroutput.c: SAC 헤더 예쁘게 인쇄
+hdroutput.c: print SAC headers pretty
 
-matlab_c_api.c: MatLab-C interface 사용 예시 (미완성)
+matlab_c_api.c: change stla, stlo SAC headers using MatLab-C interface (incomplete)
 
-ms_merge.c: libmseed 라이브러리 사용 예시
+ms_merge.c: merge MSEED file traces to single SAC file
 
-ppsd.c: obspy.signal.spectral_estimation.PPSD를 C로 번역
+ppsd.c: C version obspy.signal.spectral_estimation.PPSD, translated to C
 
-proj_geod.c: PROJ C 라이브러리 사용 예시
+proj_geod.c: calculate distance, azimuth and back azimuth using PROJ C library
 
-sacpz.c: SACPZ로 기기 응답 제거 예시
+vhdrupgrade.c: upgrade defined SAC headers' version 6->7
 
-savgol_filter.c: scipy.signal.savgol_filter를 C로 번역
-
-vhdrupgrade.c: SAC 헤더 버전 6->7로 업그레이드
-
-vhdrupgrade_undefined.c: SAC 헤더 버전 (undefined 포함) 6->7로 업그레이드
+vhdrupgrade_undefined.c: upgrade undefined SAC headers' version 6->7
